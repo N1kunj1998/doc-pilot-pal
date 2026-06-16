@@ -14,6 +14,15 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8000
 ```
 
+## Testing
+
+```bash
+pip install -r requirements-dev.txt
+pytest -v
+```
+
+Covers `/health`, `/api/hello`, and CORS behavior (both the allowed-origin case and that unconfigured origins are correctly rejected — this exact thing broke once during the Render deploy, hence the test).
+
 ## Docker
 
 ```bash
