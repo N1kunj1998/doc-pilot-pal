@@ -14,6 +14,19 @@ import {
 
 const delay = (ms = 400) => new Promise((r) => setTimeout(r, ms));
 
+const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
+
+// Real call to FastAPI backend — proves frontend/backend connection works.
+export async function pingBackend(): Promise<{ message: string } | { error: string }> {
+  try {
+    const res = await fetch(`${API_URL}/api/hello`);
+    if (!res.ok) throw new Error(`Backend responded ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Backend unreachable" };
+  }
+}
+
 export async function fetchChatThreads(): Promise<ChatThread[]> {
   await delay(200);
   return mockThreads;

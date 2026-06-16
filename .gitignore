@@ -20,6 +20,13 @@ dist-ssr
 .wrangler/
 .dev.vars
 
+# Python / backend
+backend/.venv
+backend/__pycache__
+backend/**/__pycache__
+*.pyc
+.env
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
