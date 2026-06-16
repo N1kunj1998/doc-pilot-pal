@@ -11,6 +11,26 @@ Frontend coverage: [![codecov](https://codecov.io/gh/N1kunj1998/doc-pilot-pal/br
 - `frontend/` — TanStack Start + React + Tailwind. See `frontend/Dockerfile`.
 - `backend/` — FastAPI. See `backend/README.md`.
 
+## What it does
+
+DocPilot is a team knowledge assistant: upload your org's documents, ask questions in plain English, and get answers with inline citations back to the source page — instead of digging through PDFs and wikis yourself.
+
+**Sign in** with the prefilled demo credentials (any org member, no setup):
+
+<img src="docs/screenshots/login.png" alt="DocPilot login screen" width="800" />
+
+**Ask questions in Chat** — answers cite the exact document and page they came from:
+
+<img src="docs/screenshots/chat.png" alt="DocPilot chat with cited answers" width="800" />
+
+**Upload and manage documents** — track indexing status (Indexed / Processing / Failed):
+
+<img src="docs/screenshots/documents.png" alt="DocPilot documents library" width="800" />
+
+**Admin dashboard** — query volume, active members, and recent team activity at a glance:
+
+<img src="docs/screenshots/admin.png" alt="DocPilot admin dashboard" width="800" />
+
 ## Local dev (Docker)
 
 ```bash
