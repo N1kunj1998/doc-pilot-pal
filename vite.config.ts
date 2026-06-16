@@ -11,7 +11,10 @@ export default defineConfig({
     tanstackStart({
       // Render runs a standard Node server, not an edge/Workers runtime.
       target: "node-server",
-      // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
+      // src/server.ts wraps the default entry to (a) render a friendly error
+      // page on catastrophic SSR failures and (b) open a real Node http
+      // listener on process.env.PORT — required since Render runs `node
+      // dist/server/server.js` directly.
       server: { entry: "server" },
     }),
     viteReact(),
