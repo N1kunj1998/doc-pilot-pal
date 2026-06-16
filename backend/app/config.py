@@ -10,6 +10,12 @@ class Settings(BaseSettings):
     jwt_expire_minutes: int = 60 * 24 * 7  # 1 week
     allowed_origins: str = "http://localhost:3000"
 
+    storage_endpoint_url: str = ""
+    storage_region: str = ""
+    storage_bucket: str = ""
+    storage_access_key_id: str = ""
+    storage_secret_access_key: str = ""
+
     @property
     def sqlalchemy_database_url(self) -> str:
         # Neon/most managed Postgres URLs come as "postgresql://..." which

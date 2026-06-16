@@ -31,3 +31,13 @@ class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: UserResponse
+
+
+class DocumentResponse(BaseModel):
+    id: str
+    name: str
+    size: int
+    status: str
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
