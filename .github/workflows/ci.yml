@@ -83,3 +83,13 @@ jobs:
       - uses: semgrep/semgrep-action@v1
         with:
           config: auto
+
+  deploy:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [backend-tests, frontend-tests, docker-build, secret-scan, sast]
+    steps:
+      - name: Deploy backend
+        run: curl -fsS -X POST "${{ secrets.RENDER_DEPLOY_HOOK_BACKEND }}"
+      - name: Deploy frontend
+        run: curl -fsS -X POST "${{ secrets.RENDER_DEPLOY_HOOK_FRONTEND }}"

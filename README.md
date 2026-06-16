@@ -49,7 +49,7 @@ Runs on every push/PR to `main`:
 
 Coverage uploads to Codecov (set the `CODECOV_TOKEN` repo secret, and connect the repo at [codecov.io](https://codecov.io) for the badges above to populate — the CI step is wired up either way and won't fail the build if the token is missing).
 
-There's no staging environment yet — `main` deploys straight to the Render services below on every push. CI passing is the gate before that happens.
+There's no staging environment yet, so `main` deploys straight to production — but the deploy itself is gated on CI, not automatic on every push.
 
 ## Render deploy
 
@@ -57,3 +57,7 @@ Two separate services, each pointed at this repo:
 
 - **frontend**: root directory `frontend`, Dockerfile auto-detected, build arg `VITE_API_URL=<backend-render-url>`
 - **backend**: root directory `backend`, Dockerfile auto-detected, env var `ALLOWED_ORIGINS=<frontend-render-url>`
+
+**Auto-Deploy is turned off on both Render services.** Instead, the `deploy` CI job (`.github/workflows/ci.yml`) hits each service's Render [deploy hook](https://render.com/docs/deploy-hooks) — but only after `backend-tests`, `frontend-tests`, `docker-build`, `secret-scan`, and `sast` all pass, and only on a push to `main` (not on PRs). This is the practical equivalent of the staging→production gate in more mature pipelines, without needing an actual staging environment.
+
+Deploy hook URLs are stored as repo secrets `RENDER_DEPLOY_HOOK_BACKEND` / `RENDER_DEPLOY_HOOK_FRONTEND` (Render dashboard → service → Settings → Deploy Hook). If you ever need to regenerate a hook, update the corresponding GitHub secret too.
