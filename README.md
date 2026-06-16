@@ -1,8 +1,8 @@
 # DocPilot
 
 [![CI](https://github.com/N1kunj1998/doc-pilot-pal/actions/workflows/ci.yml/badge.svg)](https://github.com/N1kunj1998/doc-pilot-pal/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/N1kunj1998/doc-pilot-pal/branch/main/graph/badge.svg?flag=backend)](https://codecov.io/gh/N1kunj1998/doc-pilot-pal)
-[![codecov](https://codecov.io/gh/N1kunj1998/doc-pilot-pal/branch/main/graph/badge.svg?flag=frontend)](https://codecov.io/gh/N1kunj1998/doc-pilot-pal)
+Backend coverage: [![codecov](https://codecov.io/gh/N1kunj1998/doc-pilot-pal/branch/main/graph/badge.svg?flag=backend)](https://codecov.io/gh/N1kunj1998/doc-pilot-pal/flags/backend)
+Frontend coverage: [![codecov](https://codecov.io/gh/N1kunj1998/doc-pilot-pal/branch/main/graph/badge.svg?flag=frontend)](https://codecov.io/gh/N1kunj1998/doc-pilot-pal/flags/frontend)
 
 - `frontend/` — TanStack Start + React + Tailwind. See `frontend/Dockerfile`.
 - `backend/` — FastAPI. See `backend/README.md`.
