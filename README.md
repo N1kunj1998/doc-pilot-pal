@@ -4,6 +4,10 @@
 Backend coverage: [![codecov](https://codecov.io/gh/N1kunj1998/doc-pilot-pal/branch/main/graph/badge.svg?flag=backend)](https://codecov.io/gh/N1kunj1998/doc-pilot-pal/flags/backend)
 Frontend coverage: [![codecov](https://codecov.io/gh/N1kunj1998/doc-pilot-pal/branch/main/graph/badge.svg?flag=frontend)](https://codecov.io/gh/N1kunj1998/doc-pilot-pal/flags/frontend)
 
+**Live demo:** https://docpilot-frontend-9e6p.onrender.com — sign in with the prefilled demo credentials already in the login form, no signup needed.
+
+> Free-tier Render instance — spins down after inactivity, so the first request after a while can take 30-60s to wake up. Be patient on first load.
+
 - `frontend/` — TanStack Start + React + Tailwind. See `frontend/Dockerfile`.
 - `backend/` — FastAPI. See `backend/README.md`.
 
