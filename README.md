@@ -1,5 +1,9 @@
 # DocPilot
 
+[![CI](https://github.com/N1kunj1998/doc-pilot-pal/actions/workflows/ci.yml/badge.svg)](https://github.com/N1kunj1998/doc-pilot-pal/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/N1kunj1998/doc-pilot-pal/branch/main/graph/badge.svg?flag=backend)](https://codecov.io/gh/N1kunj1998/doc-pilot-pal)
+[![codecov](https://codecov.io/gh/N1kunj1998/doc-pilot-pal/branch/main/graph/badge.svg?flag=frontend)](https://codecov.io/gh/N1kunj1998/doc-pilot-pal)
+
 - `frontend/` — TanStack Start + React + Tailwind. See `frontend/Dockerfile`.
 - `backend/` — FastAPI. See `backend/README.md`.
 
@@ -24,15 +28,28 @@ cd frontend && bun install && bun run dev
 ## Testing
 
 ```bash
-cd backend && pip install -r requirements-dev.txt && pytest -v
+cd backend && pip install -r requirements-dev.txt && pytest -v --cov=app
 ```
 
 ```bash
-cd frontend && bun run test        # one-shot
-cd frontend && bun run test:watch  # watch mode while developing
+cd frontend && bun run test            # one-shot
+cd frontend && bun run test:watch      # watch mode while developing
+cd frontend && bun run test:coverage   # with coverage report
 ```
 
-Both run automatically on every push/PR via GitHub Actions (`.github/workflows/ci.yml`), alongside a production build of the frontend as a smoke test.
+### CI (`.github/workflows/ci.yml`)
+
+Runs on every push/PR to `main`:
+
+- **backend-tests** — pytest + coverage
+- **frontend-tests** — Vitest + coverage, then a production build as a smoke test
+- **docker-build** — builds both Dockerfiles (no push) to catch broken Docker setups before they reach Render
+- **secret-scan** — [Gitleaks](https://github.com/gitleaks/gitleaks), fails the build if a secret/credential gets committed
+- **sast** — [Semgrep](https://semgrep.dev/) static analysis for common vulnerability patterns
+
+Coverage uploads to Codecov (set the `CODECOV_TOKEN` repo secret, and connect the repo at [codecov.io](https://codecov.io) for the badges above to populate — the CI step is wired up either way and won't fail the build if the token is missing).
+
+There's no staging environment yet — `main` deploys straight to the Render services below on every push. CI passing is the gate before that happens.
 
 ## Render deploy
 
