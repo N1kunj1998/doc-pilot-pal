@@ -27,9 +27,15 @@ backend/**/__pycache__
 backend/.pytest_cache
 backend/coverage.xml
 backend/.coverage
+backend/*.db
 frontend/coverage
 *.pyc
 .env
+
+# Local reference notes, never committed
+ROADMAP.md
+CREDENTIALS.md
+SYSTEM_DESIGN_PRINCIPLES.md
 
 # Editor directories and files
 .vscode/*
