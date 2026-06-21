@@ -1,10 +1,11 @@
-import { createContext, useContext, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { API_URL } from "./api";
 import { getToken, setToken } from "./session";
 import type { Role, User } from "./mock-data";
 
 type AuthContextType = {
   user: User | null;
+  isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   signup: (name: string, email: string, password: string, orgName: string) => Promise<void>;
   logout: () => void;
@@ -61,7 +62,16 @@ function restoreUser(): User | null {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(restoreUser);
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Restoration must happen post-mount, not during the initial render:
+  // SSR has no access to localStorage, so the first client render must
+  // match the server's (user=null) to avoid a hydration mismatch.
+  useEffect(() => {
+    setUser(restoreUser());
+    setIsLoading(false);
+  }, []);
 
   const persist = (backendUser: BackendUser | null, token: string | null) => {
     const u = backendUser ? toUser(backendUser) : null;
@@ -92,7 +102,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, signup, logout, setRole }}>
+    <AuthContext.Provider value={{ user, isLoading, login, signup, logout, setRole }}>
       {children}
     </AuthContext.Provider>
   );

@@ -8,9 +8,11 @@ import {
   type ChatThread,
   type ChatMessage,
   type Document,
+  type DocStatus,
   type Member,
   type Role,
 } from "./mock-data";
+import { getToken } from "./session";
 
 const delay = (ms = 400) => new Promise((r) => setTimeout(r, ms));
 
@@ -56,21 +58,57 @@ export async function sendChatMessage(_threadId: string, content: string): Promi
   };
 }
 
+type BackendDocument = {
+  id: string;
+  name: string;
+  size: number;
+  status: string;
+  created_at: string;
+};
+
+function formatSize(bytes: number): string {
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  const mb = (bytes / 1024 / 1024).toFixed(1);
+  return `${mb.endsWith(".0") ? mb.slice(0, -2) : mb} MB`;
+}
+
+function toDocument(backendDoc: BackendDocument): Document {
+  return {
+    id: backendDoc.id,
+    name: backendDoc.name,
+    // The backend doesn't track/expose the uploader's identity yet.
+    uploadedBy: "—",
+    uploadedAt: backendDoc.created_at.slice(0, 10),
+    size: formatSize(backendDoc.size),
+    status: (backendDoc.status.charAt(0).toUpperCase() + backendDoc.status.slice(1)) as DocStatus,
+  };
+}
+
+function authHeaders(): Record<string, string> {
+  const token = getToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 export async function fetchDocuments(): Promise<Document[]> {
-  await delay(250);
-  return mockDocuments;
+  const res = await fetch(`${API_URL}/documents`, { headers: authHeaders() });
+  if (!res.ok) throw new Error(`Failed to load documents (${res.status})`);
+  const docs: BackendDocument[] = await res.json();
+  return docs.map(toDocument);
 }
 
 export async function uploadDocument(file: File): Promise<Document> {
-  await delay(800);
-  return {
-    id: `d_${Date.now()}`,
-    name: file.name,
-    uploadedBy: "You",
-    uploadedAt: new Date().toISOString().slice(0, 10),
-    size: `${(file.size / 1024 / 1024).toFixed(1)} MB`,
-    status: "Processing",
-  };
+  const formData = new FormData();
+  formData.append("file", file);
+  const res = await fetch(`${API_URL}/documents`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: formData,
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.detail ?? "Failed to upload document");
+  }
+  return toDocument(data as BackendDocument);
 }
 
 export async function fetchOrgUsers(): Promise<Member[]> {

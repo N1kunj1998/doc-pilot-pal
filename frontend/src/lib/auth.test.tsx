@@ -35,9 +35,10 @@ beforeEach(() => {
 });
 
 describe("useAuth", () => {
-  it("starts logged out", () => {
+  it("starts logged out and resolves isLoading to false when there's no stored session", async () => {
     const { result } = renderAuth();
     expect(result.current.user).toBeNull();
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
   });
 
   it("logs in by calling POST /auth/login and stores the returned user + token", async () => {
@@ -139,7 +140,7 @@ describe("useAuth", () => {
     expect(getToken()).toBe("fake.jwt.token");
   });
 
-  it("restores the session synchronously on first render (no flash of logged-out state)", async () => {
+  it("exposes isLoading=true until the localStorage restore resolves, so route guards don't redirect a logged-in user before it's checked", async () => {
     const fetchMock = vi.fn().mockReturnValue(jsonResponse(tokenResponse));
     vi.stubGlobal("fetch", fetchMock);
 
@@ -149,10 +150,8 @@ describe("useAuth", () => {
     });
     unmount();
 
-    // Route guards (e.g. _app.tsx) read `user` on the very first render,
-    // before any effect has a chance to run — so restoration from
-    // localStorage must happen during render, not in a useEffect.
     const { result: secondMount } = renderAuth();
+    await waitFor(() => expect(secondMount.current.isLoading).toBe(false));
     expect(secondMount.current.user?.email).toBe("sarah@acme.com");
   });
 
