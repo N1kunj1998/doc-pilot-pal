@@ -1,12 +1,12 @@
 // Mock API layer. Swap these out for real REST calls to FastAPI later.
 import {
-  mockThreads,
   mockDocuments,
   mockMembers,
   mockActivity,
   mockQueryVolume,
   type ChatThread,
   type ChatMessage,
+  type Citation,
   type Document,
   type DocStatus,
   type Member,
@@ -29,33 +29,83 @@ export async function pingBackend(): Promise<{ message: string } | { error: stri
   }
 }
 
+type BackendCitation = {
+  chunk_id: string;
+  doc_name: string;
+  page: number | null;
+  snippet: string;
+};
+
+type BackendChatMessage = {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  citations: BackendCitation[] | null;
+  created_at: string;
+};
+
+type BackendChatThread = {
+  id: string;
+  title: string;
+  created_at: string;
+  messages: BackendChatMessage[];
+};
+
+function toCitation(c: BackendCitation): Citation {
+  return { id: c.chunk_id, docName: c.doc_name, page: c.page ?? undefined, snippet: c.snippet };
+}
+
+function toMessage(m: BackendChatMessage): ChatMessage {
+  return {
+    id: m.id,
+    role: m.role,
+    content: m.content,
+    citations: m.citations ? m.citations.map(toCitation) : undefined,
+    createdAt: m.created_at,
+  };
+}
+
+function toThread(t: BackendChatThread): ChatThread {
+  return {
+    id: t.id,
+    title: t.title,
+    updatedAt: t.created_at,
+    messages: t.messages.map(toMessage),
+  };
+}
+
 export async function fetchChatThreads(): Promise<ChatThread[]> {
-  await delay(200);
-  return mockThreads;
+  const res = await fetch(`${API_URL}/chat/threads`, { headers: authHeaders() });
+  if (!res.ok) throw new Error(`Failed to load chat threads (${res.status})`);
+  const threads: BackendChatThread[] = await res.json();
+  return threads.map(toThread);
 }
 
 export async function fetchChatThread(id: string): Promise<ChatThread | undefined> {
-  await delay(150);
-  return mockThreads.find((t) => t.id === id);
+  const threads = await fetchChatThreads();
+  return threads.find((t) => t.id === id);
 }
 
-export async function sendChatMessage(_threadId: string, content: string): Promise<ChatMessage> {
-  await delay(900);
-  return {
-    id: `m_${Date.now()}`,
-    role: "assistant",
-    content: `Based on the indexed documents, here's what I found regarding "${content}". The relevant policies and guidelines suggest a structured approach outlined in the team handbook.`,
-    citations: [
-      {
-        id: `c_${Date.now()}`,
-        docName: "Onboarding Guide.pdf",
-        page: 3,
-        snippet:
-          "The structured approach described in this section provides a baseline for handling such requests across teams.",
-      },
-    ],
-    createdAt: new Date().toISOString(),
-  };
+export async function createChatThread(): Promise<ChatThread> {
+  const res = await fetch(`${API_URL}/chat/threads`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify({}),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.detail ?? "Failed to create chat thread");
+  return toThread(data as BackendChatThread);
+}
+
+export async function sendChatMessage(threadId: string, content: string): Promise<ChatMessage> {
+  const res = await fetch(`${API_URL}/chat/threads/${threadId}/messages`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify({ content }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.detail ?? "Failed to send message");
+  return toMessage(data as BackendChatMessage);
 }
 
 type BackendDocument = {

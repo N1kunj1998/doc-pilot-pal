@@ -11,7 +11,7 @@ export type User = {
 export type Citation = {
   id: string;
   docName: string;
-  page: number;
+  page?: number;
   snippet: string;
 };
 

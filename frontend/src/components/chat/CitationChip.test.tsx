@@ -29,4 +29,12 @@ describe("CitationChip", () => {
 
     expect(await screen.findByText(/Relevant policy text/)).toBeInTheDocument();
   });
+
+  it("omits the page number when the citation doesn't have one", () => {
+    const citationWithoutPage = { id: "c2", docName: "Notes.txt", snippet: "Some snippet." };
+    render(<CitationChip citation={citationWithoutPage} index={1} />);
+
+    expect(screen.getByText("Notes.txt")).toBeInTheDocument();
+    expect(screen.queryByText(/p\./)).not.toBeInTheDocument();
+  });
 });

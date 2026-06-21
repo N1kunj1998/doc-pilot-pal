@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { Plus, Send, Search } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { ChatMessageView } from "./ChatMessage";
-import { fetchChatThreads, sendChatMessage } from "@/lib/api";
+import { createChatThread, fetchChatThreads, sendChatMessage } from "@/lib/api";
 import type { ChatThread, ChatMessage } from "@/lib/mock-data";
 
 export function ChatPage() {
@@ -39,21 +40,29 @@ export function ChatPage() {
     const text = input.trim();
     setInput("");
     setThreads((prev) =>
-      prev.map((t) => (t.id === active.id ? { ...t, messages: [...t.messages, userMsg] } : t))
+      prev.map((t) => (t.id === active.id ? { ...t, messages: [...t.messages, userMsg] } : t)),
     );
     setThinking(true);
-    const reply = await sendChatMessage(active.id, text);
-    setThreads((prev) =>
-      prev.map((t) => (t.id === active.id ? { ...t, messages: [...t.messages, reply] } : t))
-    );
-    setThinking(false);
+    try {
+      const reply = await sendChatMessage(active.id, text);
+      setThreads((prev) =>
+        prev.map((t) => (t.id === active.id ? { ...t, messages: [...t.messages, reply] } : t)),
+      );
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to send message");
+    } finally {
+      setThinking(false);
+    }
   };
 
-  const newChat = () => {
-    const id = `t_${Date.now()}`;
-    const t: ChatThread = { id, title: "New conversation", updatedAt: new Date().toISOString(), messages: [] };
-    setThreads((prev) => [t, ...prev]);
-    setActiveId(id);
+  const newChat = async () => {
+    try {
+      const thread = await createChatThread();
+      setThreads((prev) => [thread, ...prev]);
+      setActiveId(thread.id);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to create a new chat");
+    }
   };
 
   return (
@@ -78,7 +87,7 @@ export function ChatPage() {
                 "w-full text-left rounded-md px-2.5 py-2 text-sm transition-colors truncate",
                 t.id === activeId
                   ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                  : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
+                  : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
               )}
             >
               {t.title}
@@ -103,10 +112,14 @@ export function ChatPage() {
                 </p>
               </div>
             )}
-            {active?.messages.map((m) => <ChatMessageView key={m.id} message={m} />)}
+            {active?.messages.map((m) => (
+              <ChatMessageView key={m.id} message={m} />
+            ))}
             {thinking && (
               <div className="flex gap-3">
-                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-semibold text-primary shrink-0">AI</div>
+                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-semibold text-primary shrink-0">
+                  AI
+                </div>
                 <div className="text-sm text-muted-foreground italic pt-1.5 flex items-center gap-1">
                   Thinking
                   <span className="inline-flex gap-0.5">
@@ -126,7 +139,12 @@ export function ChatPage() {
               <Textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSend();
+                  }
+                }}
                 placeholder="Ask a question about your team's documents…"
                 className="border-0 resize-none min-h-[60px] max-h-40 focus-visible:ring-0 shadow-none bg-transparent pr-14"
               />
