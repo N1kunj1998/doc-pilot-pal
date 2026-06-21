@@ -19,11 +19,25 @@ function applyTheme(theme: Theme) {
   document.documentElement.classList.toggle("dark", isDark);
 }
 
+function isTheme(value: string | null): value is Theme {
+  return value === "light" || value === "dark" || value === "system";
+}
+
+function restoreTheme(): Theme | null {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (isTheme(stored)) return stored;
+  } catch {
+    // Corrupted/blocked localStorage — ignore and stay at the default.
+  }
+  return null;
+}
+
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<Theme>("system");
 
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY) as Theme | null;
+    const stored = restoreTheme();
     if (stored) setThemeState(stored);
   }, []);
 
@@ -41,7 +55,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   const setTheme = (next: Theme) => {
     setThemeState(next);
-    localStorage.setItem(STORAGE_KEY, next);
+    try {
+      localStorage.setItem(STORAGE_KEY, next);
+    } catch {
+      // Storage unavailable (private browsing, quota, etc.) — in-memory theme still applies.
+    }
   };
 
   return <ThemeContext.Provider value={{ theme, setTheme }}>{children}</ThemeContext.Provider>;

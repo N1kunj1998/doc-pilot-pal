@@ -66,4 +66,28 @@ describe("useTheme", () => {
     act(() => result.current.setTheme("system"));
     expect(document.documentElement.classList.contains("dark")).toBe(true);
   });
+
+  it("defaults to system without throwing when localStorage.getItem throws", () => {
+    vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+      throw new Error("blocked");
+    });
+    const { result } = renderTheme();
+    expect(result.current.theme).toBe("system");
+  });
+
+  it("still updates in-memory state when localStorage.setItem throws", () => {
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("blocked");
+    });
+    const { result } = renderTheme();
+    act(() => result.current.setTheme("dark"));
+    expect(result.current.theme).toBe("dark");
+    expect(document.documentElement.classList.contains("dark")).toBe(true);
+  });
+
+  it("rejects an invalid stored value and stays at system", () => {
+    localStorage.setItem("docpilot_theme", "banana");
+    const { result } = renderTheme();
+    expect(result.current.theme).toBe("system");
+  });
 });
