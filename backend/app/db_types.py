@@ -1,6 +1,6 @@
 import json
 
-from sqlalchemy.types import Text, TypeDecorator
+from sqlalchemy.types import Float, Text, TypeDecorator
 
 
 class Vector(TypeDecorator):
@@ -13,6 +13,15 @@ class Vector(TypeDecorator):
 
     impl = Text
     cache_ok = True
+
+    class comparator_factory(TypeDecorator.Comparator):
+        # TypeDecorator doesn't proxy pgvector's own comparator methods,
+        # so cosine_distance() has to be defined here directly. Only ever
+        # actually used against Postgres — app/retrieval.py only calls it
+        # on that dialect, falling back to Python-computed cosine
+        # similarity on SQLite, which has no such operator.
+        def cosine_distance(self, other):
+            return self.op("<=>", return_type=Float)(other)
 
     def __init__(self, dim: int, *args, **kwargs):
         self.dim = dim

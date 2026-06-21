@@ -1,13 +1,7 @@
-from openai import OpenAI
-
-from app.config import settings
+from app.openai_client import get_openai_client
 
 EMBEDDING_MODEL = "text-embedding-3-small"
 EMBEDDING_DIM = 1536
-
-
-def get_openai_client() -> OpenAI:
-    return OpenAI(api_key=settings.openai_api_key)
 
 
 def generate_embeddings(texts: list[str]) -> list[list[float]]:

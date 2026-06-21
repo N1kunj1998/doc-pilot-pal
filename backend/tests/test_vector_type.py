@@ -53,3 +53,11 @@ class TestVectorType:
             float(np.float32(0.3)),
         ]
         assert all(type(v) is float for v in result)
+
+    def test_cosine_distance_compiles_to_the_pgvector_operator(self):
+        from sqlalchemy.dialects import postgresql
+
+        expr = Sample.embedding.cosine_distance([0.1, 0.2, 0.3])
+        compiled = str(expr.compile(dialect=postgresql.dialect()))
+
+        assert "<=>" in compiled

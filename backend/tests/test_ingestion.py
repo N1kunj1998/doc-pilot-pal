@@ -84,3 +84,44 @@ class TestIngestDocument:
 
         assert document.status == "failed"
         assert db_session.query(Chunk).filter(Chunk.document_id == document.id).count() == 0
+
+    def test_text_plain_chunks_have_no_page_number(self, db_session, monkeypatch):
+        monkeypatch.setattr("app.ingestion.generate_embeddings", lambda texts: [[0.1] for _ in texts])
+        document = _make_document(db_session)
+
+        ingest_document(document, b"Hello world", "text/plain", db_session)
+
+        chunks = db_session.query(Chunk).filter(Chunk.document_id == document.id).all()
+        assert all(c.page_number is None for c in chunks)
+
+    def test_pdf_chunks_are_tagged_with_their_source_page(self, db_session, monkeypatch):
+        import io
+
+        from pypdf import PdfReader, PdfWriter
+        from reportlab.pdfgen import canvas
+
+        def pdf_page_with_text(text):
+            buf = io.BytesIO()
+            c = canvas.Canvas(buf)
+            c.drawString(50, 100, text)
+            c.save()
+            buf.seek(0)
+            return PdfReader(buf).pages[0]
+
+        writer = PdfWriter()
+        for label in ("First page content", "Second page content"):
+            page = writer.add_blank_page(width=200, height=200)
+            page.merge_page(pdf_page_with_text(label))
+        buf = io.BytesIO()
+        writer.write(buf)
+        pdf_bytes = buf.getvalue()
+
+        monkeypatch.setattr("app.ingestion.generate_embeddings", lambda texts: [[0.1] for _ in texts])
+        document = _make_document(db_session, content_type="application/pdf")
+
+        ingest_document(document, pdf_bytes, "application/pdf", db_session)
+
+        chunks = db_session.query(Chunk).filter(Chunk.document_id == document.id).order_by(Chunk.page_number).all()
+        assert [c.page_number for c in chunks] == [1, 2]
+        assert "First page" in chunks[0].content
+        assert "Second page" in chunks[1].content

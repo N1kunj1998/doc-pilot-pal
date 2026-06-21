@@ -41,3 +41,37 @@ class DocumentResponse(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class CreateThreadRequest(BaseModel):
+    title: str = Field(default="New conversation", max_length=300)
+
+
+class SendMessageRequest(BaseModel):
+    content: str = Field(min_length=1, max_length=5000)
+
+
+class CitationResponse(BaseModel):
+    chunk_id: str
+    doc_name: str
+    page: int | None
+    snippet: str
+
+
+class ChatMessageResponse(BaseModel):
+    id: str
+    role: str
+    content: str
+    citations: list[CitationResponse] | None = None
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class ChatThreadResponse(BaseModel):
+    id: str
+    title: str
+    created_at: datetime
+    messages: list[ChatMessageResponse] = []
+
+    model_config = {"from_attributes": True}

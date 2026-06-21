@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import BigInteger, Column, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import JSON, BigInteger, Column, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
@@ -62,4 +62,29 @@ class Chunk(Base):
     content: Mapped[str] = mapped_column(Text)
     embedding: Mapped[list[float]] = mapped_column(Vector(EMBEDDING_DIM))
     page_number = Column(Integer, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+    document: Mapped["Document"] = relationship()
+
+
+class ChatThread(Base):
+    __tablename__ = "chat_threads"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    org_id: Mapped[str] = mapped_column(ForeignKey("orgs.id"), index=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"))
+    title: Mapped[str] = mapped_column(String(300), default="New conversation")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+    messages: Mapped[list["ChatMessage"]] = relationship(order_by="ChatMessage.created_at")
+
+
+class ChatMessage(Base):
+    __tablename__ = "chat_messages"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    thread_id: Mapped[str] = mapped_column(ForeignKey("chat_threads.id"), index=True)
+    role: Mapped[str] = mapped_column(String(20))  # "user" | "assistant"
+    content: Mapped[str] = mapped_column(Text)
+    citations = Column(JSON, nullable=True)  # list of {chunk_id, doc_name, page, snippet}
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
