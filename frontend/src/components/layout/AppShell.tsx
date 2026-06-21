@@ -1,6 +1,7 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { MessageSquare, FileText, Users, LayoutDashboard, Settings, Sparkles, LogOut, ChevronDown } from "lucide-react";
+import { MessageSquare, FileText, Users, LayoutDashboard, Settings, LogOut, ChevronDown } from "lucide-react";
 import type { ReactNode } from "react";
+import { Logo } from "@/components/icons/Logo";
 import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 import {
@@ -36,7 +37,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <aside className="hidden md:flex w-60 shrink-0 flex-col border-r bg-sidebar">
         <div className="flex h-14 items-center gap-2 px-4 border-b">
           <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
-            <Sparkles className="h-4 w-4" />
+            <Logo className="h-4 w-4" />
           </div>
           <span className="text-sm font-semibold tracking-tight">DocPilot</span>
         </div>

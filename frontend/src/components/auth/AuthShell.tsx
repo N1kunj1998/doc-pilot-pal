@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Sparkles } from "lucide-react";
+import { Logo } from "@/components/icons/Logo";
 
 export function AuthShell({ title, subtitle, children }: { title: string; subtitle: string; children: ReactNode }) {
   return (
@@ -8,7 +8,7 @@ export function AuthShell({ title, subtitle, children }: { title: string; subtit
         <div className="w-full max-w-sm">
           <div className="mb-8 flex items-center gap-2">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <Sparkles className="h-5 w-5" />
+              <Logo className="h-5 w-5" />
             </div>
             <span className="text-lg font-semibold tracking-tight">DocPilot</span>
           </div>
