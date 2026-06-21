@@ -14,7 +14,7 @@ import {
 
 const delay = (ms = 400) => new Promise((r) => setTimeout(r, ms));
 
-const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
+export const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 
 // Real call to FastAPI backend — proves frontend/backend connection works.
 export async function pingBackend(): Promise<{ message: string } | { error: string }> {

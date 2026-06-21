@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,13 +16,24 @@ function SignupPage() {
   const [org, setOrg] = useState("");
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      await signup(name, email, pw, org);
+      nav({ to: "/chat" });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to create workspace");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <AuthShell title="Create your workspace" subtitle="Set up DocPilot for your team in seconds.">
-      <form
-        className="space-y-4"
-        onSubmit={(e) => { e.preventDefault(); signup(name, email, pw, org); nav({ to: "/chat" }); }}
-      >
+      <form className="space-y-4" onSubmit={handleSubmit}>
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-2">
             <Label htmlFor="name">Your name</Label>
@@ -29,20 +41,44 @@ function SignupPage() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="org">Organization name</Label>
-            <Input id="org" value={org} onChange={(e) => setOrg(e.target.value)} placeholder="Acme Inc" required />
+            <Input
+              id="org"
+              value={org}
+              onChange={(e) => setOrg(e.target.value)}
+              placeholder="Acme Inc"
+              required
+            />
           </div>
         </div>
         <div className="space-y-2">
           <Label htmlFor="email">Work email</Label>
-          <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          <Input
+            id="email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
         </div>
         <div className="space-y-2">
           <Label htmlFor="pw">Password</Label>
-          <Input id="pw" type="password" value={pw} onChange={(e) => setPw(e.target.value)} required />
+          <Input
+            id="pw"
+            type="password"
+            value={pw}
+            onChange={(e) => setPw(e.target.value)}
+            minLength={8}
+            required
+          />
         </div>
-        <Button type="submit" className="w-full">Create workspace</Button>
+        <Button type="submit" className="w-full" disabled={isSubmitting}>
+          {isSubmitting ? "Creating workspace…" : "Create workspace"}
+        </Button>
         <p className="text-center text-sm text-muted-foreground">
-          Already have an account? <Link to="/login" className="font-medium text-primary hover:underline">Sign in</Link>
+          Already have an account?{" "}
+          <Link to="/login" className="font-medium text-primary hover:underline">
+            Sign in
+          </Link>
         </p>
       </form>
     </AuthShell>
