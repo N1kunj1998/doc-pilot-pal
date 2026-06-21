@@ -16,6 +16,8 @@ class Settings(BaseSettings):
     storage_access_key_id: str = ""
     storage_secret_access_key: str = ""
 
+    openai_api_key: str = ""
+
     @property
     def sqlalchemy_database_url(self) -> str:
         # Neon/most managed Postgres URLs come as "postgresql://..." which

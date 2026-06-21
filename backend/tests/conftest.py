@@ -8,6 +8,16 @@ from app.db import Base, get_db
 from app.main import app
 
 
+def _make_session_factory():
+    engine = create_engine(
+        "sqlite:///:memory:",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    Base.metadata.create_all(bind=engine)
+    return sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+
 @pytest.fixture()
 def client():
     """A TestClient backed by a fresh in-memory SQLite DB per test.
@@ -17,13 +27,7 @@ def client():
     per-connection, so without this each `get_db()` call would see an
     empty, disconnected database).
     """
-    engine = create_engine(
-        "sqlite:///:memory:",
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
-    Base.metadata.create_all(bind=engine)
-    TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    TestingSessionLocal = _make_session_factory()
 
     def override_get_db():
         db = TestingSessionLocal()
@@ -35,3 +39,16 @@ def client():
     app.dependency_overrides[get_db] = override_get_db
     yield TestClient(app)
     app.dependency_overrides.clear()
+
+
+@pytest.fixture()
+def db_session():
+    """A raw SQLAlchemy session on a fresh in-memory SQLite DB, for tests
+    that exercise model/module code directly rather than through the API.
+    """
+    TestingSessionLocal = _make_session_factory()
+    db = TestingSessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()

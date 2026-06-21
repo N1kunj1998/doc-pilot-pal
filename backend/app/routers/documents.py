@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.db import get_db
 from app.deps import get_current_user
+from app.ingestion import ingest_document
 from app.models import Document, User
 from app.schemas import DocumentResponse
 from app.storage import upload_file
@@ -62,5 +63,6 @@ def upload_document(
     db.refresh(document)
 
     upload_file(key=document.storage_path, content=content, content_type=file.content_type)
+    ingest_document(document, content, file.content_type, db)
 
     return document

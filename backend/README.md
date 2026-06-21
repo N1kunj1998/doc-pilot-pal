@@ -8,7 +8,7 @@ FastAPI + SQLAlchemy + Alembic. Endpoints:
 - `POST /auth/login` — returns a JWT
 - `GET /auth/me` — current user, requires `Authorization: Bearer <token>`
 - `GET /documents` — list the current org's documents, requires auth
-- `POST /documents` — multipart upload (`file` field), 25MB max, PDF/txt/doc/docx/md only, requires auth
+- `POST /documents` — multipart upload (`file` field), 25MB max, PDF/txt/doc/docx/md only, requires auth. Synchronously extracts text, chunks it, generates embeddings (OpenAI), and stores them before responding — the returned document's `status` is `"indexed"` or `"failed"`, not just `"processing"`.
 
 ## Local run
 
@@ -34,8 +34,13 @@ uvicorn app.main:app --reload --port 8000
 | `STORAGE_BUCKET` | empty | |
 | `STORAGE_ACCESS_KEY_ID` | empty | |
 | `STORAGE_SECRET_ACCESS_KEY` | empty | |
+| `OPENAI_API_KEY` | empty | Used for embeddings (and, later, chat completions). Not a GitHub Actions secret — tests mock all OpenAI calls, so CI never needs a real key. |
 
-Uploads will fail locally unless these storage vars are set to real values — there's no local-only storage fallback (unlike `DATABASE_URL`, which defaults to SQLite). If you need to test uploads locally, copy the storage values from `CREDENTIALS.md`.
+Uploads will fail locally unless the storage and OpenAI vars are set to real values — there's no local-only fallback for either (unlike `DATABASE_URL`, which defaults to SQLite). If you need to test uploads locally, copy the values from `CREDENTIALS.md`.
+
+### A note on `chunks.embedding` and SQLite
+
+The `chunks` table's `embedding` column uses a custom type (`app/db_types.Vector`) that renders as real `pgvector` on Postgres and as JSON-encoded text on SQLite. This means local dev/tests can create and read `Chunk` rows without a real Postgres+pgvector instance, but **similarity search (cosine distance, etc.) only works on Postgres** — there's no SQLite fallback for that, since it would require implementing vector math in Python. Phase 4's retrieval endpoint will only ever run that search path against the real production database.
 
 ## Migrations
 
@@ -53,7 +58,7 @@ pip install -r requirements-dev.txt
 pytest -v --cov=app
 ```
 
-Tests run against an isolated in-memory SQLite DB per test (see `tests/conftest.py`) — never against the real dev or production database. Document upload tests mock `app.storage.upload_file` so they never make a real network call to Supabase either. Covers `/health`, `/api/hello`, CORS behavior, the full signup/login/me auth flow (including the same-error-message-for-wrong-password-and-unknown-email behavior, a deliberate anti-enumeration choice), and document upload/list (org isolation, file size/type validation).
+Tests run against an isolated in-memory SQLite DB per test (see `tests/conftest.py`) — never against the real dev or production database. Document upload tests mock `app.storage.upload_file` and `app.ingestion.generate_embeddings` so they never make a real network call to Supabase or OpenAI. Covers `/health`, `/api/hello`, CORS behavior, the full signup/login/me auth flow (including the same-error-message-for-wrong-password-and-unknown-email behavior, a deliberate anti-enumeration choice), document upload/list (org isolation, file size/type validation), and the ingestion pipeline (chunking, text extraction for txt/md/pdf/docx, embedding generation, and the cross-dialect `Vector` column type).
 
 ## Docker
 
