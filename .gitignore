@@ -36,6 +36,7 @@ frontend/coverage
 ROADMAP.md
 CREDENTIALS.md
 SYSTEM_DESIGN_PRINCIPLES.md
+docs/superpowers/
 
 # Editor directories and files
 .vscode/*
