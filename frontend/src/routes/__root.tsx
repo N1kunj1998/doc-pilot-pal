@@ -14,6 +14,9 @@ import { AuthProvider } from "@/lib/auth";
 import { ThemeProvider } from "@/lib/theme";
 import { Toaster } from "@/components/ui/sonner";
 
+// Runs before React hydrates so dark mode applies with no flash. This sets
+// classList on <html> outside React's render tree, so suppressHydrationWarning
+// on <html> below is required to silence the resulting (expected) mismatch.
 const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem("docpilot_theme");var d=t==="dark"||(t!=="light"&&window.matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.classList.toggle("dark",d);}catch(e){}})();`;
 
 function NotFoundComponent() {
