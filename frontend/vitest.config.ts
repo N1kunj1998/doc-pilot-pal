@@ -16,6 +16,10 @@ export default defineConfig({
     environment: "jsdom",
     setupFiles: ["./src/test/setup.ts"],
     globals: true,
+    // Playwright E2E specs live under e2e/ and run via `bun run e2e`, not Vitest.
+    // Without this, Vitest's default *.spec.ts glob picks them up and fails
+    // because they call Playwright's test() outside a Playwright test run.
+    exclude: ["**/node_modules/**", "e2e/**"],
     coverage: {
       provider: "v8",
       reporter: ["text", "lcov"],
