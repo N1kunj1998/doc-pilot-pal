@@ -1,3 +1,5 @@
+import pytest
+
 from app.ingestion import ingest_document
 from app.models import Chunk, Document, Org, User
 from tests.conftest import fake_embedding
@@ -37,7 +39,10 @@ class TestIngestDocument:
         chunks = db_session.query(Chunk).filter(Chunk.document_id == document.id).all()
         assert len(chunks) == 1
         assert chunks[0].content == "Hello world, this is the document body."
-        assert chunks[0].embedding == fake_embedding(0.1, 0.2, 0.3)
+        # pytest.approx, not exact equality: real pgvector stores
+        # embeddings as float32, so a value round-tripped through real
+        # Postgres won't be bit-exact to the float64 literal used here.
+        assert chunks[0].embedding == pytest.approx(fake_embedding(0.1, 0.2, 0.3))
 
     def test_chunks_each_get_their_own_embedding(self, db_session, monkeypatch):
         captured = {}
@@ -55,7 +60,8 @@ class TestIngestDocument:
         assert captured["texts"] == ["chunk a", "chunk b"]
         chunks = db_session.query(Chunk).filter(Chunk.document_id == document.id).order_by(Chunk.content).all()
         assert [c.content for c in chunks] == ["chunk a", "chunk b"]
-        assert [c.embedding for c in chunks] == [fake_embedding(0.0), fake_embedding(1.0)]
+        assert chunks[0].embedding == pytest.approx(fake_embedding(0.0))
+        assert chunks[1].embedding == pytest.approx(fake_embedding(1.0))
 
     def test_empty_extracted_text_marks_indexed_with_no_chunks(self, db_session, monkeypatch):
         monkeypatch.setattr("app.ingestion.generate_embeddings", lambda texts: [fake_embedding(0.1) for _ in texts])
