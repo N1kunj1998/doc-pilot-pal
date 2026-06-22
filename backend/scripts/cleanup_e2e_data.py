@@ -32,31 +32,42 @@ def main() -> None:
     try:
         test_orgs = db.query(Org).filter(Org.name.like("E2E-TEST%")).all()
         print(f"Found {len(test_orgs)} E2E test org(s) to clean up.")
+
+        succeeded = 0
+        failed = 0
         for org in test_orgs:
             print(f"Cleaning up org: {org.name} (id={org.id})")
 
-            documents = db.query(Document).filter(Document.org_id == org.id).all()
-            for document in documents:
-                if document.storage_path:
-                    try:
-                        get_s3_client().delete_object(
-                            Bucket=settings.storage_bucket, Key=document.storage_path
-                        )
-                    except Exception as e:
-                        print(f"  warning: failed to delete storage object {document.storage_path}: {e}")
-                db.query(Chunk).filter(Chunk.document_id == document.id).delete()
+            try:
+                documents = db.query(Document).filter(Document.org_id == org.id).all()
+                for document in documents:
+                    if document.storage_path:
+                        try:
+                            get_s3_client().delete_object(
+                                Bucket=settings.storage_bucket, Key=document.storage_path
+                            )
+                        except Exception as e:
+                            print(f"  warning: failed to delete storage object {document.storage_path}: {e}")
+                    db.query(Chunk).filter(Chunk.document_id == document.id).delete()
 
-            threads = db.query(ChatThread).filter(ChatThread.org_id == org.id).all()
-            for thread in threads:
-                db.query(ChatMessage).filter(ChatMessage.thread_id == thread.id).delete()
-            db.query(ChatThread).filter(ChatThread.org_id == org.id).delete()
+                threads = db.query(ChatThread).filter(ChatThread.org_id == org.id).all()
+                for thread in threads:
+                    db.query(ChatMessage).filter(ChatMessage.thread_id == thread.id).delete()
+                db.query(ChatThread).filter(ChatThread.org_id == org.id).delete()
 
-            db.query(Document).filter(Document.org_id == org.id).delete()
-            db.query(User).filter(User.org_id == org.id).delete()
-            db.delete(org)
+                db.query(Document).filter(Document.org_id == org.id).delete()
+                db.query(User).filter(User.org_id == org.id).delete()
+                db.delete(org)
 
-        db.commit()
-        print("Cleanup complete.")
+                db.commit()
+                succeeded += 1
+            except Exception as e:
+                print(f"  error: failed to clean up org {org.name} (id={org.id}): {e}")
+                db.rollback()
+                failed += 1
+                continue
+
+        print(f"Cleanup complete: {succeeded} org(s) cleaned up, {failed} failed.")
     finally:
         db.close()
 
