@@ -4,7 +4,7 @@
 Backend coverage: [![codecov](https://codecov.io/gh/N1kunj1998/doc-pilot-pal/branch/main/graph/badge.svg?flag=backend)](https://codecov.io/gh/N1kunj1998/doc-pilot-pal/flags/backend)
 Frontend coverage: [![codecov](https://codecov.io/gh/N1kunj1998/doc-pilot-pal/branch/main/graph/badge.svg?flag=frontend)](https://codecov.io/gh/N1kunj1998/doc-pilot-pal/flags/frontend)
 
-**Live demo:** https://docpilot-frontend-9e6p.onrender.com — sign in with the prefilled demo credentials already in the login form, no signup needed.
+**Live demo:** https://docpilot-frontend-9e6p.onrender.com — create a free account (any name/email/org works, this is a demo), then upload a document and start asking questions.
 
 > Free-tier Render instance — spins down after inactivity, so the first request after a while can take 30-60s to wake up. Be patient on first load.
 
@@ -15,7 +15,7 @@ Frontend coverage: [![codecov](https://codecov.io/gh/N1kunj1998/doc-pilot-pal/br
 
 DocPilot is a team knowledge assistant: upload your org's documents, ask questions in plain English, and get answers with inline citations back to the source page — instead of digging through PDFs and wikis yourself.
 
-**Sign in** with the prefilled demo credentials (any org member, no setup):
+**Sign in or create a workspace in seconds:**
 
 <img src="docs/screenshots/login.png" alt="DocPilot login screen" width="800" />
 
