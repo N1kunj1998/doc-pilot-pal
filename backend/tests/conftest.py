@@ -7,7 +7,19 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.db import Base, get_db
+from app.embeddings import EMBEDDING_DIM
 from app.main import app
+
+
+def fake_embedding(*leading_values: float) -> list[float]:
+    """A valid EMBEDDING_DIM-length vector for tests. Real pgvector
+    enforces exact dimension match; SQLite's Vector type doesn't, so
+    short stub vectors silently "work" there but fail on real Postgres.
+    Pads the given leading values with zeros so cosine-similarity-based
+    test assertions (which only care about the leading, meaningful
+    dimensions) keep working identically to before.
+    """
+    return list(leading_values) + [0.0] * (EMBEDDING_DIM - len(leading_values))
 
 
 def _make_session_factory():

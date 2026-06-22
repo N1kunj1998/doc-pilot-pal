@@ -1,5 +1,6 @@
 from app.ingestion import ingest_document
 from app.models import Chunk, Document, Org, User
+from tests.conftest import fake_embedding
 
 
 def _make_document(db_session, content_type="text/plain"):
@@ -26,7 +27,7 @@ class TestIngestDocument:
     def test_successful_ingestion_creates_chunks_and_marks_indexed(self, db_session, monkeypatch):
         monkeypatch.setattr(
             "app.ingestion.generate_embeddings",
-            lambda texts: [[0.1, 0.2, 0.3] for _ in texts],
+            lambda texts: [fake_embedding(0.1, 0.2, 0.3) for _ in texts],
         )
         document = _make_document(db_session)
 
@@ -36,14 +37,14 @@ class TestIngestDocument:
         chunks = db_session.query(Chunk).filter(Chunk.document_id == document.id).all()
         assert len(chunks) == 1
         assert chunks[0].content == "Hello world, this is the document body."
-        assert chunks[0].embedding == [0.1, 0.2, 0.3]
+        assert chunks[0].embedding == fake_embedding(0.1, 0.2, 0.3)
 
     def test_chunks_each_get_their_own_embedding(self, db_session, monkeypatch):
         captured = {}
 
         def fake_generate_embeddings(texts):
             captured["texts"] = texts
-            return [[float(i)] for i in range(len(texts))]
+            return [fake_embedding(float(i)) for i in range(len(texts))]
 
         monkeypatch.setattr("app.ingestion.generate_embeddings", fake_generate_embeddings)
         monkeypatch.setattr("app.ingestion.chunk_text", lambda text, **kw: ["chunk a", "chunk b"])
@@ -54,10 +55,10 @@ class TestIngestDocument:
         assert captured["texts"] == ["chunk a", "chunk b"]
         chunks = db_session.query(Chunk).filter(Chunk.document_id == document.id).order_by(Chunk.content).all()
         assert [c.content for c in chunks] == ["chunk a", "chunk b"]
-        assert [c.embedding for c in chunks] == [[0.0], [1.0]]
+        assert [c.embedding for c in chunks] == [fake_embedding(0.0), fake_embedding(1.0)]
 
     def test_empty_extracted_text_marks_indexed_with_no_chunks(self, db_session, monkeypatch):
-        monkeypatch.setattr("app.ingestion.generate_embeddings", lambda texts: [[0.1] for _ in texts])
+        monkeypatch.setattr("app.ingestion.generate_embeddings", lambda texts: [fake_embedding(0.1) for _ in texts])
         document = _make_document(db_session)
 
         ingest_document(document, b"   ", "text/plain", db_session)
@@ -86,7 +87,7 @@ class TestIngestDocument:
         assert db_session.query(Chunk).filter(Chunk.document_id == document.id).count() == 0
 
     def test_text_plain_chunks_have_no_page_number(self, db_session, monkeypatch):
-        monkeypatch.setattr("app.ingestion.generate_embeddings", lambda texts: [[0.1] for _ in texts])
+        monkeypatch.setattr("app.ingestion.generate_embeddings", lambda texts: [fake_embedding(0.1) for _ in texts])
         document = _make_document(db_session)
 
         ingest_document(document, b"Hello world", "text/plain", db_session)
@@ -116,7 +117,7 @@ class TestIngestDocument:
         writer.write(buf)
         pdf_bytes = buf.getvalue()
 
-        monkeypatch.setattr("app.ingestion.generate_embeddings", lambda texts: [[0.1] for _ in texts])
+        monkeypatch.setattr("app.ingestion.generate_embeddings", lambda texts: [fake_embedding(0.1) for _ in texts])
         document = _make_document(db_session, content_type="application/pdf")
 
         ingest_document(document, pdf_bytes, "application/pdf", db_session)

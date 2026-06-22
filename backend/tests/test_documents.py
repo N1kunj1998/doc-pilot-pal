@@ -1,3 +1,6 @@
+from tests.conftest import fake_embedding
+
+
 def signup(client, email="sarah@acme.com", password="password123", name="Sarah", org_name="Acme Inc"):
     response = client.post(
         "/auth/signup",
@@ -16,7 +19,7 @@ def mock_upload(monkeypatch):
 
 
 def mock_embeddings(monkeypatch):
-    monkeypatch.setattr("app.ingestion.generate_embeddings", lambda texts: [[0.1, 0.2, 0.3] for _ in texts])
+    monkeypatch.setattr("app.ingestion.generate_embeddings", lambda texts: [fake_embedding(0.1, 0.2, 0.3) for _ in texts])
 
 
 class TestListDocuments:

@@ -1,5 +1,6 @@
 from app.models import Chunk, Document, Org, User
 from app.rag import answer_question
+from tests.conftest import fake_embedding
 
 
 def _make_org_with_document(db_session):
@@ -57,7 +58,7 @@ class FakeOpenAIClient:
 class TestAnswerQuestion:
     def test_returns_a_real_fallback_when_no_chunks_exist(self, db_session, monkeypatch):
         org, _ = _make_org_with_document(db_session)
-        monkeypatch.setattr("app.rag.embed_query", lambda q: [1.0, 0.0, 0.0])
+        monkeypatch.setattr("app.rag.embed_query", lambda q: fake_embedding(1.0, 0.0, 0.0))
 
         answer, citations = answer_question("What is the onboarding process?", org.id, db_session)
 
@@ -66,9 +67,11 @@ class TestAnswerQuestion:
 
     def test_answers_using_retrieved_chunks_and_returns_real_citations(self, db_session, monkeypatch):
         org, document = _make_org_with_document(db_session)
-        chunk = _add_chunk(db_session, document, "New hires get a laptop on day one.", [1.0, 0.0, 0.0], page_number=3)
+        chunk = _add_chunk(
+            db_session, document, "New hires get a laptop on day one.", fake_embedding(1.0, 0.0, 0.0), page_number=3
+        )
 
-        monkeypatch.setattr("app.rag.embed_query", lambda q: [1.0, 0.0, 0.0])
+        monkeypatch.setattr("app.rag.embed_query", lambda q: fake_embedding(1.0, 0.0, 0.0))
         fake_client = FakeOpenAIClient("New hires receive a laptop on their first day. [1]")
         monkeypatch.setattr("app.rag.get_openai_client", lambda: fake_client)
 
@@ -101,9 +104,9 @@ class TestAnswerQuestion:
         )
         db_session.add(doc_b)
         db_session.commit()
-        _add_chunk(db_session, doc_b, "org b secret content", [1.0, 0.0, 0.0])
+        _add_chunk(db_session, doc_b, "org b secret content", fake_embedding(1.0, 0.0, 0.0))
 
-        monkeypatch.setattr("app.rag.embed_query", lambda q: [1.0, 0.0, 0.0])
+        monkeypatch.setattr("app.rag.embed_query", lambda q: fake_embedding(1.0, 0.0, 0.0))
 
         answer, citations = answer_question("anything?", org_a.id, db_session)
 
