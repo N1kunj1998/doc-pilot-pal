@@ -1,14 +1,17 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { AuthProvider } from "@/lib/auth";
+import { ThemeProvider } from "@/lib/theme";
 import { SettingsPage } from "./SettingsPage";
 import * as api from "@/lib/api";
 
 function renderSettings() {
   return render(
-    <AuthProvider>
-      <SettingsPage />
-    </AuthProvider>,
+    <ThemeProvider>
+      <AuthProvider>
+        <SettingsPage />
+      </AuthProvider>
+    </ThemeProvider>,
   );
 }
 

@@ -21,7 +21,9 @@ export function DocumentsPage() {
   const [docs, setDocs] = useState<Document[]>([]);
   const [open, setOpen] = useState(false);
 
-  useEffect(() => { fetchDocuments().then(setDocs); }, []);
+  useEffect(() => {
+    fetchDocuments().then(setDocs);
+  }, []);
 
   const onUploaded = (d: Document) => setDocs((prev) => [d, ...prev]);
 
@@ -45,7 +47,9 @@ export function DocumentsPage() {
           </TabsList>
           <TabsContent value="grid" className="mt-6">
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {docs.map((d) => <DocumentCard key={d.id} doc={d} />)}
+              {docs.map((d) => (
+                <DocumentCard key={d.id} doc={d} />
+              ))}
             </div>
           </TabsContent>
           <TabsContent value="table" className="mt-6">
@@ -70,8 +74,14 @@ export function DocumentsPage() {
                       <TableCell className="text-muted-foreground">{d.uploadedBy}</TableCell>
                       <TableCell className="text-muted-foreground">{d.uploadedAt}</TableCell>
                       <TableCell className="text-muted-foreground">{d.size}</TableCell>
-                      <TableCell><StatusBadge status={d.status} /></TableCell>
-                      <TableCell><Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button></TableCell>
+                      <TableCell>
+                        <StatusBadge status={d.status} />
+                      </TableCell>
+                      <TableCell>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -88,9 +98,16 @@ export function DocumentsPage() {
 
 export function StatusBadge({ status }: { status: Document["status"] }) {
   const map = {
-    Indexed: "bg-emerald-50 text-emerald-700 border-emerald-200",
-    Processing: "bg-amber-50 text-amber-700 border-amber-200",
-    Failed: "bg-rose-50 text-rose-700 border-rose-200",
+    Indexed:
+      "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800",
+    Processing:
+      "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-800",
+    Failed:
+      "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950 dark:text-rose-300 dark:border-rose-800",
   } as const;
-  return <Badge variant="outline" className={map[status]}>{status}</Badge>;
+  return (
+    <Badge variant="outline" className={map[status]}>
+      {status}
+    </Badge>
+  );
 }

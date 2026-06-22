@@ -1,9 +1,22 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { MessageSquare, FileText, Users, LayoutDashboard, Settings, LogOut, ChevronDown } from "lucide-react";
+import {
+  MessageSquare,
+  FileText,
+  Users,
+  LayoutDashboard,
+  Settings,
+  LogOut,
+  ChevronDown,
+  Sun,
+  Moon,
+  Monitor,
+} from "lucide-react";
 import type { ReactNode } from "react";
 import { Logo } from "@/components/icons/Logo";
 import { useAuth } from "@/lib/auth";
+import { useTheme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
+import { MobileNav } from "./MobileNav";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,12 +41,13 @@ const NAV: NavItem[] = [
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { user, logout, setRole } = useAuth();
+  const { theme, setTheme } = useTheme();
   const nav = useNavigate();
 
   const items = NAV.filter((n) => !n.adminOnly || user?.role === "Admin");
 
   return (
-    <div className="flex h-screen w-full bg-background">
+    <div className="flex h-screen w-full flex-col bg-background md:flex-row">
       <aside className="hidden md:flex w-60 shrink-0 flex-col border-r bg-sidebar">
         <div className="flex h-14 items-center gap-2 px-4 border-b">
           <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
@@ -54,7 +68,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                   "flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm transition-colors",
                   active
                     ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                    : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
+                    : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
                 )}
               >
                 <Icon className="h-4 w-4" />
@@ -79,13 +93,41 @@ export function AppShell({ children }: { children: ReactNode }) {
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel>{user?.name}</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">View as (demo)</DropdownMenuLabel>
-              <DropdownMenuRadioGroup value={user?.role} onValueChange={(v) => setRole(v as "Admin" | "Member")}>
+              <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+                View as (demo)
+              </DropdownMenuLabel>
+              <DropdownMenuRadioGroup
+                value={user?.role}
+                onValueChange={(v) => setRole(v as "Admin" | "Member")}
+              >
                 <DropdownMenuRadioItem value="Admin">Admin</DropdownMenuRadioItem>
                 <DropdownMenuRadioItem value="Member">Member</DropdownMenuRadioItem>
               </DropdownMenuRadioGroup>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => { logout(); nav({ to: "/login" }); }}>
+              <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+                Theme
+              </DropdownMenuLabel>
+              <DropdownMenuRadioGroup
+                value={theme}
+                onValueChange={(v) => setTheme(v as "light" | "dark" | "system")}
+              >
+                <DropdownMenuRadioItem value="light">
+                  <Sun className="mr-2 h-4 w-4" /> Light
+                </DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="dark">
+                  <Moon className="mr-2 h-4 w-4" /> Dark
+                </DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="system">
+                  <Monitor className="mr-2 h-4 w-4" /> System
+                </DropdownMenuRadioItem>
+              </DropdownMenuRadioGroup>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => {
+                  logout();
+                  nav({ to: "/login" });
+                }}
+              >
                 <LogOut className="mr-2 h-4 w-4" /> Sign out
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -93,7 +135,8 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </aside>
 
-      <main className="flex-1 overflow-hidden">{children}</main>
+      <main className="flex-1 overflow-hidden order-first md:order-none">{children}</main>
+      <MobileNav pathname={pathname} role={user?.role} />
     </div>
   );
 }

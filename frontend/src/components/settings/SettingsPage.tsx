@@ -1,15 +1,18 @@
 import { useEffect, useState } from "react";
+import { Sun, Moon, Monitor } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
+import { useTheme } from "@/lib/theme";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { pingBackend } from "@/lib/api";
 
 export function SettingsPage() {
   const { user } = useAuth();
+  const { theme, setTheme } = useTheme();
   const [org, setOrg] = useState(user?.orgName ?? "");
   const [backendStatus, setBackendStatus] = useState<"checking" | "online" | "offline">("checking");
 
@@ -25,13 +28,43 @@ export function SettingsPage() {
       <div className="flex-1 overflow-y-auto p-8 space-y-8 max-w-2xl">
         <section className="rounded-xl border bg-card p-6 shadow-[var(--shadow-soft)]">
           <h3 className="text-sm font-semibold">Organization</h3>
-          <p className="text-xs text-muted-foreground">This name appears in your workspace and on invitations.</p>
+          <p className="text-xs text-muted-foreground">
+            This name appears in your workspace and on invitations.
+          </p>
           <div className="mt-4 space-y-2">
             <Label htmlFor="org">Organization name</Label>
             <Input id="org" value={org} onChange={(e) => setOrg(e.target.value)} />
           </div>
           <div className="mt-4 flex justify-end">
             <Button onClick={() => toast.success("Organization name saved")}>Save changes</Button>
+          </div>
+        </section>
+
+        <section className="rounded-xl border bg-card p-6 shadow-[var(--shadow-soft)]">
+          <h3 className="text-sm font-semibold">Appearance</h3>
+          <p className="text-xs text-muted-foreground">Choose how DocPilot looks on this device.</p>
+          <div className="mt-4 flex gap-2">
+            <Button
+              variant={theme === "light" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setTheme("light")}
+            >
+              <Sun className="h-4 w-4" /> Light
+            </Button>
+            <Button
+              variant={theme === "dark" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setTheme("dark")}
+            >
+              <Moon className="h-4 w-4" /> Dark
+            </Button>
+            <Button
+              variant={theme === "system" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setTheme("system")}
+            >
+              <Monitor className="h-4 w-4" /> System
+            </Button>
           </div>
         </section>
 
@@ -73,7 +106,9 @@ function Limit({ label, used, max }: { label: string; used: number; max: number 
     <div>
       <div className="flex justify-between text-sm">
         <span>{label}</span>
-        <span className="text-muted-foreground">{used.toLocaleString()} / {max.toLocaleString()}</span>
+        <span className="text-muted-foreground">
+          {used.toLocaleString()} / {max.toLocaleString()}
+        </span>
       </div>
       <Progress className="mt-2" value={(used / max) * 100} />
     </div>
