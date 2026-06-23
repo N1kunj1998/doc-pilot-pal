@@ -1,3 +1,5 @@
+import os
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -18,6 +20,10 @@ class Settings(BaseSettings):
 
     openai_api_key: str = ""
 
+    langfuse_secret_key: str = ""
+    langfuse_public_key: str = ""
+    langfuse_base_url: str = ""
+
     @property
     def sqlalchemy_database_url(self) -> str:
         # Neon/most managed Postgres URLs come as "postgresql://..." which
@@ -33,3 +39,13 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+# The Langfuse SDK discovers its credentials from os.environ, but
+# pydantic-settings loads .env into this Settings object only, not into
+# os.environ. setdefault() bridges the two for local .env-file-based dev
+# without ever overwriting real env vars already set by the platform
+# (e.g. Render injects these directly into the process environment).
+if settings.langfuse_secret_key:
+    os.environ.setdefault("LANGFUSE_SECRET_KEY", settings.langfuse_secret_key)
+    os.environ.setdefault("LANGFUSE_PUBLIC_KEY", settings.langfuse_public_key)
+    os.environ.setdefault("LANGFUSE_BASE_URL", settings.langfuse_base_url)
