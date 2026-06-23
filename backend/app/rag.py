@@ -1,3 +1,4 @@
+from langfuse import observe
 from sqlalchemy.orm import Session
 
 from app.openai_client import get_openai_client
@@ -14,6 +15,7 @@ SYSTEM_PROMPT = (
 NO_CONTEXT_ANSWER = "I couldn't find anything in your documents to answer that."
 
 
+@observe(name="answer-question", capture_input=False)
 def answer_question(question: str, org_id: str, db: Session) -> tuple[str, list[dict]]:
     query_embedding = embed_query(question)
     chunks = find_relevant_chunks(query_embedding, org_id, db)

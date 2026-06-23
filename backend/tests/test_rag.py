@@ -111,3 +111,14 @@ class TestAnswerQuestion:
         answer, citations = answer_question("anything?", org_a.id, db_session)
 
         assert citations == []
+
+    def test_runs_without_error_when_decorated_for_tracing(self, db_session, monkeypatch):
+        # Regression guard: @observe() must never raise, even when Langfuse
+        # credentials are unset (the default in tests/CI) — the SDK is
+        # documented to no-op silently in that case.
+        org, _ = _make_org_with_document(db_session)
+        monkeypatch.setattr("app.rag.embed_query", lambda q: fake_embedding(1.0, 0.0, 0.0))
+
+        answer, citations = answer_question("anything?", org.id, db_session)
+
+        assert citations == []
