@@ -143,14 +143,18 @@ jobs:
       - name: Wait for deploy to be live
         run: |
           for i in $(seq 1 20); do
-            if curl -fsS -o /dev/null "https://docpilot-frontend-9e6p.onrender.com"; then
-              echo "Frontend is live."
+            frontend_ok=false
+            backend_ok=false
+            curl -fsS -o /dev/null "https://docpilot-frontend-9e6p.onrender.com" && frontend_ok=true
+            curl -fsS -o /dev/null "https://docpilot-backend-52qy.onrender.com/health" && backend_ok=true
+            if [ "$frontend_ok" = true ] && [ "$backend_ok" = true ]; then
+              echo "Frontend and backend are live."
               exit 0
             fi
-            echo "Waiting for frontend to come up... ($i/20)"
+            echo "Waiting for frontend/backend to come up... ($i/20)"
             sleep 15
           done
-          echo "::warning::Frontend did not respond within timeout; proceeding to run E2E test anyway."
+          echo "::warning::Frontend/backend did not respond within timeout; proceeding to run E2E test anyway."
       - name: Run E2E smoke test (non-blocking)
         working-directory: frontend
         run: bun run e2e
@@ -169,6 +173,7 @@ jobs:
           pip install -r requirements-dev.txt
           python scripts/cleanup_e2e_data.py
         env:
+          PYTHONPATH: .
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           STORAGE_ENDPOINT_URL: ${{ secrets.STORAGE_ENDPOINT_URL }}
           STORAGE_REGION: ${{ secrets.STORAGE_REGION }}
