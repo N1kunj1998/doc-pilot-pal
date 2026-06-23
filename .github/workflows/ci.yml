@@ -124,3 +124,54 @@ jobs:
         run: curl -fsS -X POST "${{ secrets.RENDER_DEPLOY_HOOK_BACKEND }}"
       - name: Deploy frontend
         run: curl -fsS -X POST "${{ secrets.RENDER_DEPLOY_HOOK_FRONTEND }}"
+
+  e2e-smoke-test:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [deploy]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: bun install --frozen-lockfile
+      - name: Install Playwright browsers
+        working-directory: frontend
+        run: bunx playwright install --with-deps chromium
+      - name: Wait for deploy to be live
+        run: |
+          for i in $(seq 1 20); do
+            if curl -fsS -o /dev/null "https://docpilot-frontend-9e6p.onrender.com"; then
+              echo "Frontend is live."
+              exit 0
+            fi
+            echo "Waiting for frontend to come up... ($i/20)"
+            sleep 15
+          done
+          echo "::warning::Frontend did not respond within timeout; proceeding to run E2E test anyway."
+      - name: Run E2E smoke test (non-blocking)
+        working-directory: frontend
+        run: bun run e2e
+        continue-on-error: true
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: frontend/playwright-report/
+          retention-days: 14
+      - name: Clean up E2E test data
+        if: always()
+        working-directory: backend
+        run: |
+          pip install -r requirements-dev.txt
+          python scripts/cleanup_e2e_data.py
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          STORAGE_ENDPOINT_URL: ${{ secrets.STORAGE_ENDPOINT_URL }}
+          STORAGE_REGION: ${{ secrets.STORAGE_REGION }}
+          STORAGE_BUCKET: ${{ secrets.STORAGE_BUCKET }}
+          STORAGE_ACCESS_KEY_ID: ${{ secrets.STORAGE_ACCESS_KEY_ID }}
+          STORAGE_SECRET_ACCESS_KEY: ${{ secrets.STORAGE_SECRET_ACCESS_KEY }}
