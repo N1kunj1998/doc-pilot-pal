@@ -45,7 +45,7 @@ settings = Settings()
 # os.environ. setdefault() bridges the two for local .env-file-based dev
 # without ever overwriting real env vars already set by the platform
 # (e.g. Render injects these directly into the process environment).
-if settings.langfuse_secret_key:
+if settings.langfuse_secret_key and settings.langfuse_public_key:
     os.environ.setdefault("LANGFUSE_SECRET_KEY", settings.langfuse_secret_key)
     os.environ.setdefault("LANGFUSE_PUBLIC_KEY", settings.langfuse_public_key)
     os.environ.setdefault("LANGFUSE_BASE_URL", settings.langfuse_base_url)
