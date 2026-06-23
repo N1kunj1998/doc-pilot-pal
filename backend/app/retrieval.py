@@ -1,3 +1,4 @@
+from langfuse import get_client, observe
 from sqlalchemy.orm import Session
 
 from app.embeddings import generate_embeddings
@@ -8,20 +9,31 @@ def embed_query(query: str) -> list[float]:
     return generate_embeddings([query])[0]
 
 
+def _chunk_summary(chunks: list[Chunk]) -> list[dict]:
+    return [
+        {"chunk_id": chunk.id, "doc_name": chunk.document.name, "page": chunk.page_number, "snippet": chunk.content}
+        for chunk in chunks
+    ]
+
+
+@observe(name="find-relevant-chunks", as_type="retriever", capture_input=False)
 def find_relevant_chunks(query_embedding: list[float], org_id: str, db: Session, limit: int = 5) -> list[Chunk]:
     base_query = (
         db.query(Chunk).join(Document, Chunk.document_id == Document.id).filter(Document.org_id == org_id)
     )
 
     if db.bind.dialect.name == "postgresql":
-        return base_query.order_by(Chunk.embedding.cosine_distance(query_embedding)).limit(limit).all()
+        chunks = base_query.order_by(Chunk.embedding.cosine_distance(query_embedding)).limit(limit).all()
+    else:
+        # SQLite (tests/local dev) has no pgvector distance operator — fall
+        # back to computing cosine similarity in Python. Fine at test/dev
+        # data volumes; production always takes the real pgvector path above.
+        all_chunks = base_query.all()
+        all_chunks.sort(key=lambda c: _cosine_similarity(c.embedding, query_embedding), reverse=True)
+        chunks = all_chunks[:limit]
 
-    # SQLite (tests/local dev) has no pgvector distance operator — fall
-    # back to computing cosine similarity in Python. Fine at test/dev
-    # data volumes; production always takes the real pgvector path above.
-    chunks = base_query.all()
-    chunks.sort(key=lambda c: _cosine_similarity(c.embedding, query_embedding), reverse=True)
-    return chunks[:limit]
+    get_client().update_current_span(input={"org_id": org_id, "limit": limit}, output=_chunk_summary(chunks))
+    return chunks
 
 
 def _cosine_similarity(a: list[float], b: list[float]) -> float:

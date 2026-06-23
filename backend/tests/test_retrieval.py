@@ -75,3 +75,15 @@ class TestFindRelevantChunks:
         results = find_relevant_chunks(fake_embedding(1.0, 0.0, 0.0), org.id, db_session, limit=3)
 
         assert len(results) == 3
+
+    def test_runs_without_error_when_decorated_for_tracing(self, db_session):
+        # Regression guard: @observe() must never raise, even when Langfuse
+        # credentials are unset (the default in tests/CI) — the SDK is
+        # documented to no-op silently in that case, and this pipeline must
+        # keep working unchanged either way.
+        org, document = _make_org_with_document(db_session)
+        _add_chunk(db_session, document, "some content", fake_embedding(1.0, 0.0, 0.0))
+
+        results = find_relevant_chunks(fake_embedding(1.0, 0.0, 0.0), org.id, db_session, limit=1)
+
+        assert len(results) == 1
