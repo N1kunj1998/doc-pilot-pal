@@ -1,4 +1,4 @@
-from openai import OpenAI
+from langfuse.openai import OpenAI
 
 from app.config import settings
 
