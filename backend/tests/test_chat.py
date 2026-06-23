@@ -116,3 +116,20 @@ class TestSendMessage:
         response = client.post(f"/chat/threads/{thread_id}/messages", headers=org_b_headers, json={"content": "hi"})
 
         assert response.status_code == 404
+
+    def test_send_message_works_with_tracing_decorator_added(self, client, monkeypatch):
+        # Regression guard: @observe() + propagate_attributes() must never
+        # raise, even when Langfuse credentials are unset (the default in
+        # tests/CI) — the SDK is documented to no-op silently in that case.
+        monkeypatch.setattr(
+            "app.routers.chat.answer_question",
+            lambda question, org_id, db: ("The answer is 42.", []),
+        )
+        headers = auth_headers(client)
+        thread_id = client.post("/chat/threads", headers=headers, json={}).json()["id"]
+
+        response = client.post(
+            f"/chat/threads/{thread_id}/messages", headers=headers, json={"content": "hello"}
+        )
+
+        assert response.status_code == 201

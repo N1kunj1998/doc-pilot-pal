@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from langfuse import observe, propagate_attributes
 from sqlalchemy.orm import Session
 
 from app.db import get_db
@@ -38,23 +39,25 @@ def create_thread(
 @router.post(
     "/threads/{thread_id}/messages", response_model=ChatMessageResponse, status_code=status.HTTP_201_CREATED
 )
+@observe(name="send-message", capture_input=False)
 def send_message(
     thread_id: str,
     payload: SendMessageRequest,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    thread = _get_org_thread_or_404(thread_id, user, db)
+    with propagate_attributes(user_id=str(user.id), metadata={"org_id": user.org_id}):
+        thread = _get_org_thread_or_404(thread_id, user, db)
 
-    db.add(ChatMessage(thread_id=thread.id, role="user", content=payload.content))
+        db.add(ChatMessage(thread_id=thread.id, role="user", content=payload.content))
 
-    if thread.title == "New conversation":
-        thread.title = payload.content[:80]
+        if thread.title == "New conversation":
+            thread.title = payload.content[:80]
 
-    answer, citations = answer_question(payload.content, user.org_id, db)
+        answer, citations = answer_question(payload.content, user.org_id, db)
 
-    assistant_message = ChatMessage(thread_id=thread.id, role="assistant", content=answer, citations=citations)
-    db.add(assistant_message)
-    db.commit()
-    db.refresh(assistant_message)
-    return assistant_message
+        assistant_message = ChatMessage(thread_id=thread.id, role="assistant", content=answer, citations=citations)
+        db.add(assistant_message)
+        db.commit()
+        db.refresh(assistant_message)
+        return assistant_message
